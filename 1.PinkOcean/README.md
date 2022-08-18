@@ -17,3 +17,7 @@
 - 如果你就想改索引，可以使用$set：内部是splice()
 
 4.将数据代理到vm对象上 vm.xx => vm._data.xx  
+5.判断用户是否传入了el 属性 ， 内部会调用$mount方法，此方法也可以用户自己调用 
+- `new Vue({el}) || new Vue().$mount() || new Vue({render(){}})`
+
+6.将模版编译成ast语法树 -> 解析ast语法树生成codegen字符串 -> render函数
