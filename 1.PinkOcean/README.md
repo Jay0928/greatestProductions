@@ -8,6 +8,6 @@
 
 ## 二.Vue的初始化流程
 
-1.`new Vue({})`
-2.调用`init`，初始化数据，将数据挂载到`$options`,通过`vm.$options`访问
-3.
+> 1.`new Vue({})`
+> 2.调用`init`，初始化数据，将数据挂载到`$options`,通过`vm.$options`访问
+> 3.
