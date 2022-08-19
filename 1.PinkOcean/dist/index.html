@@ -7,13 +7,13 @@
     <title>Document</title>
 </head>
 <body>
-    <div id="app">{{message}}</div>
+    <div id="app">aaaa{{message}}bbbbbbb{{name}}<span>{{age}}cccccc{{obj}}</span></div>
     <script src="./vue.js"></script>
     <script>
         let vm = new Vue({
             el: "#app",
             data() {
-                return {message: "hello"}
+                return {message: "hello",name: "赵",age: 99,obj: {}}
             }
         })
     </script>

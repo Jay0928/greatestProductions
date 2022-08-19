@@ -19,5 +19,7 @@
 4.将数据代理到vm对象上 vm.xx => vm._data.xx  
 5.判断用户是否传入了el 属性 ， 内部会调用$mount方法，此方法也可以用户自己调用 
 - `new Vue({el}) || new Vue().$mount() || new Vue({render(){}})`
-
-6.将模版编译成ast语法树 -> 解析ast语法树生成codegen字符串 -> render函数
+6.对模版的优先级处理，render -> template -> outerHTML
+7.将模版编译成ast语法树 -> 解析ast语法树生成codegen字符串 -> render函数  
+8.通过render函数 生成虚拟dom + 真实数据 => 真实dom
+9.根据虚拟节点渲染真实节点
