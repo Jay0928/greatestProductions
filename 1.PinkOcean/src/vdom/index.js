@@ -1,4 +1,4 @@
-export function createElement(vm, tag, data = {}, children) { //返回虚拟节点
+export function createElement(vm, tag, data = {}, ...children) { //返回虚拟节点
     return vnode(vm, tag, data, children, undefined,undefined)
 }
 

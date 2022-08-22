@@ -1,7 +1,7 @@
 import { putch } from "./vdom/putch";
 
-export function mountCompont(vm) {
-    vm._updata(vm._render() );
+export function mountComponent(vm) {
+    vm._update(vm._render());
 }
 
 export function leftCyleMixin(Vue) {
