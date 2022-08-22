@@ -6,7 +6,7 @@ export function putch(el, vnode) {
 }
 
 function createElm(vnode) {
-    let {tag,data,children,text ,vm} = vnode;
+    let {tag,data,children,text ,vm, el} = vnode;
 
     //让虚拟节点和真实节点映射：后续更新某个虚拟节点，我们可以跟踪真实节点，并更新真实节点
     if(typeof tag === 'string') {
@@ -17,7 +17,7 @@ function createElm(vnode) {
             vnode.el.appendChild(createElm(child))
         });
     } else {
-        document.createTextNode(text);
+        vnode.el = document.createTextNode(text);
     }
 
     return vnode.el
