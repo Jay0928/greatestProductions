@@ -3,6 +3,8 @@ export function putch(el, vnode) {
     let parentNode = el.parentNode
     parentNode.insertBefore(elm, el.nextSibling)//el.nextSibling不存在就是null, insertBefore就是appendChild
     parentNode.removeChild(el)
+
+    return elm //返回最新节点
 }
 
 function createElm(vnode) {

@@ -255,6 +255,7 @@
       parentNode.insertBefore(elm, el.nextSibling); //el.nextSibling不存在就是null, insertBefore就是appendChild
 
       parentNode.removeChild(el);
+      return elm; //返回最新节点
     }
 
     function createElm(vnode) {
@@ -288,14 +289,40 @@
       }
     }
 
+    class Watcher {
+      constructor(vm, fn, cb, options) {
+        //dep放到Watcher中
+        this.vm = vm;
+        this.fn = fn;
+        this.cb = cb;
+        this.options = options;
+        this.getter = fn; //页面渲染逻辑
+
+        this.get(); //初始化
+      }
+
+      get() {
+        this.getter();
+      }
+
+    }
+
     function mountComponent(vm) {
-      vm._update(vm._render());
+      //初始化流程
+      let updateComponent = () => {
+        vm._update(vm._render());
+      }; //每个组件都有一个Watch（观察者）
+
+
+      new Watcher(vm, updateComponent, () => {
+        console.log("更新的钩子函数 Updata");
+      });
     }
     function leftCyleMixin(Vue) {
       Vue.prototype._update = function (vnode) {
         //先序深入遍历创建节点 ：遇到节点就创建节点，递归创建
         const vm = this;
-        putch(vm.$el, vnode);
+        vm.$el = putch(vm.$el, vnode);
       };
     }
 
