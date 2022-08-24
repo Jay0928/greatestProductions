@@ -316,6 +316,62 @@
 
     Dep.target = null; //全局静态变量：window.target
 
+    function isFunction(val) {
+      return typeof val == 'function';
+    }
+    function isObject(val) {
+      return typeof val == 'object' && val !== null;
+    }
+    let isArray = Array.isArray;
+    let callBacks = [];
+    let waiting = false;
+
+    function flushCallBacks() {
+      callBacks.forEach(fn => fn());
+      callBacks = [];
+      waiting = false;
+    }
+
+    function nextTick(fn) {
+      //VUE3的nextTick就是Promise,VUE2里面做了一些兼容性处理
+      callBacks.push(fn);
+
+      if (!waiting) {
+        Promise.resolve().then(flushCallBacks);
+        waiting = true;
+      }
+    }
+
+    let queue = []; //队列，存放要更新的watcher
+
+    let has = {}; //存放已有的watcher的id
+
+    let pedding = false;
+
+    function flushSchedulerQueue() {
+      queue.forEach(watcher => watcher.run());
+      queue = [];
+      has = {};
+      pedding = false;
+    }
+
+    function queueWatcher(watcher) {
+      //一般情况下，写去重，可以采用这种方式，或者使用Set()
+      let id = watcher.id;
+
+      if (has[id] == null) {
+        //去重：去掉重复的watcher
+        has[id] = true;
+        queue.push(watcher);
+
+        if (!pedding) {
+          //防抖，多次执行，只执行一次
+          nextTick(flushSchedulerQueue);
+          pedding = true;
+        }
+      }
+    }
+
     let id = 0; //防止重复
 
     class Watcher {
@@ -353,7 +409,15 @@
       }
 
       update() {
-        //做异步更新
+        //每次更新数据都会同步调用update，可以将更新的逻辑缓存起来，等会同步更新数据的逻辑执行完毕后，依次调用（去重）
+        console.log("缓存次数");
+        queueWatcher(this); //做异步更新vue.nextTick
+
+        this.get();
+      }
+
+      run() {
+        console.log("真正更新的次数");
         this.get();
       }
 
@@ -377,14 +441,6 @@
         vm.$el = putch(vm.$el, vnode);
       };
     }
-
-    function isFunction(val) {
-      return typeof val == 'function';
-    }
-    function isObject(val) {
-      return typeof val == 'object' && val !== null;
-    }
-    let isArray = Array.isArray;
 
     let oldArrayPrototype = Array.prototype; // 获取数组的老的原型方法
 
@@ -584,6 +640,8 @@
 
         mountComponent(vm);
       };
+
+      Vue.prototype.$nextTick = nextTick;
     }
 
     function createElement(vm, tag, data = {}, ...children) {

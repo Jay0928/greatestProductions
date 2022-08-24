@@ -1,6 +1,7 @@
 import { compileToFunction } from "./compiler";
 import { mountComponent } from "./leftCycle";
 import { initState } from './state'
+import { nextTick } from "./utils";
 export function initMixin(Vue) {
     Vue.prototype._init = function(options) {
         const vm = this;
@@ -35,4 +36,6 @@ export function initMixin(Vue) {
         // 组件挂载(el, render)
         mountComponent(vm)
     }
+
+    Vue.prototype.$nextTick = nextTick
 }
