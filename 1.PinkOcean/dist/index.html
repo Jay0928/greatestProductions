@@ -7,17 +7,24 @@
     <title>Document</title>
 </head>
 <body>
-    <div id="app">aaaa{{message}}bbbbbbb{{name}}<span>{{age}}cccccc{{obj}}</span></div>
+    <div id="app">
+        <p>{{ name }}</p>
+        <p>{{ name }}</p>
+        <p>{{ name }}</p>
+        <p>{{ age }}</p>
+    </div>
     <script src="./vue.js"></script>
     <script>
         let vm = new Vue({
             el: "#app",
             data() {
-                return {message: "hello",name: "赵",age: 99,obj: {}}
+                return {
+                    name: "赵",
+                    age: 25
+                }
             }
         })
-        // vm.message = "123"
-        // vm._update(vm._render())
+        // vm.name = "张"
     </script>
 </body>
 </html>

@@ -41,9 +41,12 @@ function defineReactive(obj,key,value){ // vue2 慢的原因 主要在这个方�
     observe(value); // 递归进行观测数据，不管有多少层 我都进行defineProperty
 
     let dep = new Dep(); //每隔属性都增加了dep
-
+    // console.log('dep',dep)
     Object.defineProperty(obj,key,{
         get(){ // 后续会有很多逻辑
+            if(Dep.target) {
+                dep.depend();
+            }
             return value; // 闭包，次此value 会像上层的value进行查找
         },
         set(newValue){  // 如果设置的是一个对象那么会再次进行劫持
@@ -51,6 +54,7 @@ function defineReactive(obj,key,value){ // vue2 慢的原因 主要在这个方�
             observe(newValue);
             console.log('修改')
             value = newValue
+            dep.notify(); //拿到当前dep中的watcher，依次执行
         }
     })
 }

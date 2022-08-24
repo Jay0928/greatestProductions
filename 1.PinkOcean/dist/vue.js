@@ -289,6 +289,35 @@
       }
     }
 
+    let id$1 = 0;
+
+    class Dep {
+      constructor() {
+        // 把Watcher放到dep上
+        this.subs = [];
+        this.id = id$1++;
+      }
+
+      depend() {
+        //给Watcher加一个标识，防止重复
+        // this.subs.push(Dep.target); //让dep记住这个watcher，watcher记住dep，相互关系
+        Dep.target.addDep(this);
+      }
+
+      addSub(watcher) {
+        this.subs.push(watcher); //让dep记住watcher
+      }
+
+      notify() {
+        this.subs.forEach(watcher => watcher.update());
+      }
+
+    }
+
+    Dep.target = null; //全局静态变量：window.target
+
+    let id = 0; //防止重复
+
     class Watcher {
       constructor(vm, fn, cb, options) {
         //dep放到Watcher中
@@ -296,13 +325,36 @@
         this.fn = fn;
         this.cb = cb;
         this.options = options;
+        this.id = id++;
+        this.depsId = new Set();
+        this.deps = [];
         this.getter = fn; //页面渲染逻辑
 
         this.get(); //初始化
       }
 
+      addDep(dep) {
+        let did = dep.id;
+
+        if (!this.depsId.has(did)) {
+          this.depsId.add(did);
+          this.deps.push(dep); //保存id，并让watcher记住dep
+
+          dep.addSub(this);
+        }
+      }
+
       get() {
-        this.getter();
+        Dep.target = this; //Dep.target = Watcher
+
+        this.getter(); //页面渲染逻辑
+
+        Dep.target = null; //渲染完成将标识清空，只有在渲染时候才会进行依赖收集
+      }
+
+      update() {
+        //做异步更新
+        this.get();
       }
 
     }
@@ -418,9 +470,16 @@
       // vue2 慢的原因 主要在这个方法中
       observe(value); // 递归进行观测数据，不管有多少层 我都进行defineProperty
 
+      let dep = new Dep(); //每隔属性都增加了dep
+      // console.log('dep',dep)
+
       Object.defineProperty(obj, key, {
         get() {
           // 后续会有很多逻辑
+          if (Dep.target) {
+            dep.depend();
+          }
+
           return value; // 闭包，次此value 会像上层的value进行查找
         },
 
@@ -430,6 +489,7 @@
           observe(newValue);
           console.log('修改');
           value = newValue;
+          dep.notify(); //拿到当前dep中的watcher，依次执行
         }
 
       });
