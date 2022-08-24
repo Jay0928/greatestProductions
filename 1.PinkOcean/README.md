@@ -18,7 +18,7 @@
 
 4.将数据代理到vm对象上 vm.xx => vm._data.xx  
 5.判断用户是否传入了el 属性 ， 内部会调用$mount方法，此方法也可以用户自己调用 
-- `new Vue({el}) || new Vue().$mount() || new Vue({render(){}})`  
+- `new Vue({el}) || new Vue().$mount() || new Vue({render(){}})`
 
 6.对模版的优先级处理，render -> template -> outerHTML
 7.将模版编译成ast语法树 -> 解析ast语法树生成codegen字符串 -> render函数  
@@ -30,7 +30,7 @@
 - Vue用了观察者模式，默认组件渲染的时候，会创建一个watcher（并渲染视图），
 - 当渲染视图时候，取data中的数据，会走每个属性的get方法，让属性dep记录watcher
 - 同时让dep也记住watcher，dep和watcher是多对多的关系，一个属性对应多个视图,一个视图对应多个属性 
-- 如果数据发生变化，会通知对应属性的dep，依次通知存放的watcher去更新  
+- 如果数据发生变化，会通知对应属性的dep，依次通知存放的watcher去更新
 
 11.异步更新（等待全部数据执行完，去重，依次更新）
 - 队列push、一次微任务Promise.resolve().then()
