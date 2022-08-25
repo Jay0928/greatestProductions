@@ -12,6 +12,7 @@
         <p>{{ name }}</p>
         <p>{{ name }}</p>
         <p>{{ age }}</p>
+        <p>{{ arr[0].xx }}</p>
     </div>
     <script src="./vue.js"></script>
     <script>
@@ -20,7 +21,8 @@
             data() {
                 return {
                     name: "赵",
-                    age: 25
+                    age: 25,
+                    arr: [{xx: 100}]
                 }
             }
         })
@@ -28,6 +30,7 @@
         vm.name = "张三"
         vm.name = "里斯"
         vm.name = "王武"
+        vm.arr[0].xx = 10000
     </script>
 </body>
 </html>

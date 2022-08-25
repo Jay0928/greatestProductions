@@ -8,6 +8,7 @@ class Observer {
     constructor(value){
         // 不让__ob__ 被遍历到
         // value.__ob__ = this; // 我给对象和数组添加一个自定义属性
+        this.dep = new Dep(); //给对象和数组本身增加dep属性 {}。__ob__.dep [].__ob__.dep
         Object.defineProperty(value,'__ob__',{
             value:this,
             enumerable:false // 标识这个属性不能被列举出来，不能被循环到
@@ -31,6 +32,16 @@ class Observer {
         });
     }
 }
+
+function dependArray(value){
+    for(let i = 0;i<value.length; i++) {
+        let current = value[i];
+        current.__ob__  &&  current.__ob__.dep.depend();
+        if(Array.isArray(current)) {
+            dependArray(current)
+        }
+    }
+}
 // vue2 应用了defineProperty需要一加载的时候 就进行递归操作，所以好性能，如果层次过深也会浪费性能
 // 1.性能优化的原则：
 // 1) 不要把所有的数据都放在data中，因为所有的数据都会增加get和set
@@ -38,14 +49,21 @@ class Observer {
 // 3) 不要频繁获取数据
 // 4) 如果数据不需要响应式 可以使用Object.freeze 冻结属性 
 function defineReactive(obj,key,value){ // vue2 慢的原因 主要在这个方法中
-    observe(value); // 递归进行观测数据，不管有多少层 我都进行defineProperty
+    let childOb = observe(value); // 递归进行观测数据，不管有多少层 我都进行defineProperty
+    childOb.dep //数组的dep
 
     let dep = new Dep(); //每隔属性都增加了dep
     // console.log('dep',dep)
     Object.defineProperty(obj,key,{
         get(){ // 后续会有很多逻辑
             if(Dep.target) {
-                dep.depend();
+                dep.depend();//属性依赖收集
+            }
+            if(childOb) { //取属性的时候，会对对应数组、对象本身进行依赖收集
+                childOb.dep.depend();//对象数组本身的依赖收集
+                if(Array.isArray(value)) {
+                    dependArray(value)
+                }
             }
             return value; // 闭包，次此value 会像上层的value进行查找
         },
