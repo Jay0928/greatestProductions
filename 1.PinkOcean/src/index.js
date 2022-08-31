@@ -1,3 +1,4 @@
+import { initGlobalAPI } from "./global-api";
 import { initMixin } from "./init";
 import { leftCyleMixin } from "./leftCycle";
 import { renderMixin } from "./render";
@@ -12,5 +13,7 @@ initMixin(Vue);
 renderMixin(Vue);//真实节点
 leftCyleMixin(Vue);//渲染真实节点
 
+
+initGlobalAPI(Vue)
 
 export default Vue; 

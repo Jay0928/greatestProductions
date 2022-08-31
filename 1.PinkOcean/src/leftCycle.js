@@ -6,11 +6,12 @@ export function mountComponent(vm) {
     let updateComponent = () => {
         vm._update(vm._render());
     }
-
+    callhook(vm, 'beforeCreate')
     //每个组件都有一个Watch（观察者）
     new Watcher(vm, updateComponent, () => {
         console.log("更新的钩子函数 Updata")
     })
+    callhook(vm, 'mounted')
 }
 
 export function leftCyleMixin(Vue) {
@@ -19,4 +20,11 @@ export function leftCyleMixin(Vue) {
         const vm = this;
         vm.$el = putch(vm.$el, vnode)
     }
+}
+
+export function callhook(vm, hook) {
+    let handlers = vm.$options[hook];
+    handlers && handlers.forEach(fn => {
+        fn.call(vm);//生命周期的this，永远指向实例
+    })
 }

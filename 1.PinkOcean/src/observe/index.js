@@ -50,7 +50,7 @@ function dependArray(value){
 // 4) 如果数据不需要响应式 可以使用Object.freeze 冻结属性 
 function defineReactive(obj,key,value){ // vue2 慢的原因 主要在这个方法中
     let childOb = observe(value); // 递归进行观测数据，不管有多少层 我都进行defineProperty
-    childOb.dep //数组的dep
+    // childOb.dep //数组的dep
 
     let dep = new Dep(); //每隔属性都增加了dep
     // console.log('dep',dep)

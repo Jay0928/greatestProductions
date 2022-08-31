@@ -5,6 +5,7 @@ let has = {};//存放已有的watcher的id
 let pedding = false;
 
 function flushSchedulerQueue() {
+    //beforeUpdate
     queue.forEach(watcher => watcher.run())
     queue = [];
     has = {};

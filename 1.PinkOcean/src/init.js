@@ -1,11 +1,11 @@
 import { compileToFunction } from "./compiler";
 import { mountComponent } from "./leftCycle";
 import { initState } from './state'
-import { nextTick } from "./utils";
+import { mergeOptions, nextTick } from "./utils";
 export function initMixin(Vue) {
     Vue.prototype._init = function(options) {
         const vm = this;
-        vm.$options = options; 
+        vm.$options = mergeOptions(vm.constructor.options, options); 
         initState(vm);
         if (vm.$options.el) {
             // 要将数据挂载到页面上

@@ -16,6 +16,16 @@
     </div>
     <script src="./vue.js"></script>
     <script>
+        Vue.mixin({
+            beforeCreate() {
+                console.log('全局的1')
+            }
+        })
+        Vue.mixin({
+            beforeCreate() {
+                console.log('全局的2')
+            }
+        })
         let vm = new Vue({
             el: "#app",
             data() {
@@ -24,13 +34,22 @@
                     age: 25,
                     arr: [{xx: 100}]
                 }
-            }
+            },
+            beforeCreate: [
+                function() {
+                    console.log(111111)
+                },
+                function() {
+                    console.log(222222)
+                }
+            ]
         })
+        console.log(vm.$options)
         // 异步更新数据，只更新一次
-        vm.name = "张三"
-        vm.name = "里斯"
-        vm.name = "王武"
-        vm.arr[0].xx = 10000
+        // vm.name = "张三"
+        // vm.name = "里斯"
+        // vm.name = "王武"
+        // vm.arr[0].xx = 10000
     </script>
 </body>
 </html>

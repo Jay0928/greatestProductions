@@ -35,3 +35,4 @@
 - 队列push、一次微任务Promise.resolve().then()
 
 12.数组依赖收集
+13.mixin和生命周期

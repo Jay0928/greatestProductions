@@ -1,4 +1,6 @@
 export function putch(el, vnode) {
+    //unmount
+
     const elm = createElm(vnode);//根据虚拟节点返回真实节点
     let parentNode = el.parentNode
     parentNode.insertBefore(elm, el.nextSibling)//el.nextSibling不存在就是null, insertBefore就是appendChild

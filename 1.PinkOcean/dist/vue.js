@@ -4,6 +4,93 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Vue = factory());
 })(this, (function () { 'use strict';
 
+    function isFunction(val) {
+      return typeof val == 'function';
+    }
+    function isObject(val) {
+      return typeof val == 'object' && val !== null;
+    }
+    let isArray = Array.isArray;
+    let callBacks = [];
+    let waiting = false;
+
+    function flushCallBacks() {
+      callBacks.forEach(fn => fn());
+      callBacks = [];
+      waiting = false;
+    }
+
+    function nextTick(fn) {
+      //VUE3的nextTick就是Promise,VUE2里面做了一些兼容性处理
+      callBacks.push(fn);
+
+      if (!waiting) {
+        Promise.resolve().then(flushCallBacks);
+        waiting = true;
+      }
+    }
+    let strats = {}; //存放所有策略
+
+    let lifeCycle = ["beforeCreate", "created", "beforeMount", "mounted"];
+    lifeCycle.forEach(hook => {
+      strats[hook] = function (parentVal, childValue) {
+        if (childValue) {
+          if (parentVal) {
+            return parentVal.concat(childValue);
+          } else {
+            if (isArray(childValue)) {
+              return childValue;
+            } else {
+              return [childValue];
+            }
+          }
+        } else {
+          return parentVal;
+        }
+      };
+    });
+    function mergeOptions(parentVal, childValue) {
+      const options = {};
+
+      for (let key in parentVal) {
+        mergeFiled(key);
+      }
+
+      for (let key in childValue) {
+        if (!parentVal.hasOwnProperty(key)) {
+          mergeFiled(key);
+        }
+      }
+
+      function mergeFiled(key) {
+        //设计模式 策略模式
+        let strat = strats[key];
+
+        if (strat) {
+          options[key] = strat(parentVal[key], childValue[key]); // 合并两个值
+        } else {
+          options[key] = childValue[key] || parentVal[key];
+        }
+      }
+
+      return options;
+    } // console.log(mergeOptions({a: 1}, {a:2,b:3}))
+
+    function initGlobalAPI(Vue) {
+      Vue.options = {}; //全局属性
+
+      Vue.mixin = function (options) {
+        this.options = mergeOptions(this.options, options);
+        return this;
+      };
+
+      Vue.component = function (options) {};
+
+      Vue.filter = function (options) {};
+
+      Vue.directive = function (options) {};
+    }
+
     const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g; // {{   xxx  }}  
 
     function genProps(attrs) {
@@ -249,6 +336,7 @@
      */
 
     function putch(el, vnode) {
+      //unmount
       const elm = createElm(vnode); //根据虚拟节点返回真实节点
 
       let parentNode = el.parentNode;
@@ -316,32 +404,6 @@
 
     Dep.target = null; //全局静态变量：window.target
 
-    function isFunction(val) {
-      return typeof val == 'function';
-    }
-    function isObject(val) {
-      return typeof val == 'object' && val !== null;
-    }
-    let isArray = Array.isArray;
-    let callBacks = [];
-    let waiting = false;
-
-    function flushCallBacks() {
-      callBacks.forEach(fn => fn());
-      callBacks = [];
-      waiting = false;
-    }
-
-    function nextTick(fn) {
-      //VUE3的nextTick就是Promise,VUE2里面做了一些兼容性处理
-      callBacks.push(fn);
-
-      if (!waiting) {
-        Promise.resolve().then(flushCallBacks);
-        waiting = true;
-      }
-    }
-
     let queue = []; //队列，存放要更新的watcher
 
     let has = {}; //存放已有的watcher的id
@@ -349,6 +411,7 @@
     let pedding = false;
 
     function flushSchedulerQueue() {
+      //beforeUpdate
       queue.forEach(watcher => watcher.run());
       queue = [];
       has = {};
@@ -427,12 +490,14 @@
       //初始化流程
       let updateComponent = () => {
         vm._update(vm._render());
-      }; //每个组件都有一个Watch（观察者）
+      };
 
+      callhook(vm, 'beforeCreate'); //每个组件都有一个Watch（观察者）
 
       new Watcher(vm, updateComponent, () => {
         console.log("更新的钩子函数 Updata");
       });
+      callhook(vm, 'mounted');
     }
     function leftCyleMixin(Vue) {
       Vue.prototype._update = function (vnode) {
@@ -440,6 +505,12 @@
         const vm = this;
         vm.$el = putch(vm.$el, vnode);
       };
+    }
+    function callhook(vm, hook) {
+      let handlers = vm.$options[hook];
+      handlers && handlers.forEach(fn => {
+        fn.call(vm); //生命周期的this，永远指向实例
+      });
     }
 
     let oldArrayPrototype = Array.prototype; // 获取数组的老的原型方法
@@ -475,6 +546,7 @@
 
 
         if (inserted) ob.observeArray(inserted);
+        ob.dep.notify();
       };
     }); // 属性的查找：是先找自己身上的，找不到去原型上查找
 
@@ -484,6 +556,8 @@
       constructor(value) {
         // 不让__ob__ 被遍历到
         // value.__ob__ = this; // 我给对象和数组添加一个自定义属性
+        this.dep = new Dep(); //给对象和数组本身增加dep属性 {}。__ob__.dep [].__ob__.dep
+
         Object.defineProperty(value, '__ob__', {
           value: this,
           enumerable: false // 标识这个属性不能被列举出来，不能被循环到
@@ -514,6 +588,17 @@
         });
       }
 
+    }
+
+    function dependArray(value) {
+      for (let i = 0; i < value.length; i++) {
+        let current = value[i];
+        current.__ob__ && current.__ob__.dep.depend();
+
+        if (Array.isArray(current)) {
+          dependArray(current);
+        }
+      }
     } // vue2 应用了defineProperty需要一加载的时候 就进行递归操作，所以好性能，如果层次过深也会浪费性能
     // 1.性能优化的原则：
     // 1) 不要把所有的数据都放在data中，因为所有的数据都会增加get和set
@@ -524,7 +609,8 @@
 
     function defineReactive(obj, key, value) {
       // vue2 慢的原因 主要在这个方法中
-      observe(value); // 递归进行观测数据，不管有多少层 我都进行defineProperty
+      let childOb = observe(value); // 递归进行观测数据，不管有多少层 我都进行defineProperty
+      // childOb.dep //数组的dep
 
       let dep = new Dep(); //每隔属性都增加了dep
       // console.log('dep',dep)
@@ -533,7 +619,16 @@
         get() {
           // 后续会有很多逻辑
           if (Dep.target) {
-            dep.depend();
+            dep.depend(); //属性依赖收集
+          }
+
+          if (childOb) {
+            //取属性的时候，会对对应数组、对象本身进行依赖收集
+            childOb.dep.depend(); //对象数组本身的依赖收集
+
+            if (Array.isArray(value)) {
+              dependArray(value);
+            }
           }
 
           return value; // 闭包，次此value 会像上层的value进行查找
@@ -607,7 +702,7 @@
     function initMixin(Vue) {
       Vue.prototype._init = function (options) {
         const vm = this;
-        vm.$options = options;
+        vm.$options = mergeOptions(vm.constructor.options, options);
         initState(vm);
 
         if (vm.$options.el) {
@@ -711,6 +806,8 @@
     renderMixin(Vue); //真实节点
 
     leftCyleMixin(Vue); //渲染真实节点
+
+    initGlobalAPI(Vue);
 
     return Vue;
 
