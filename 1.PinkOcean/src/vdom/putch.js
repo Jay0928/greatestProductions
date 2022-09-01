@@ -1,15 +1,21 @@
-export function putch(el, vnode) {
+export function putch(oldVnode, vnode) {
     //unmount
 
-    const elm = createElm(vnode);//根据虚拟节点返回真实节点
-    let parentNode = el.parentNode
-    parentNode.insertBefore(elm, el.nextSibling)//el.nextSibling不存在就是null, insertBefore就是appendChild
-    parentNode.removeChild(el)
-
-    return elm //返回最新节点
+    const isRealElement = oldVnode.nodeType
+    if(isRealElement){
+        const elm = createElm(vnode);//根据虚拟节点返回真实节点
+        let parentNode = oldVnode.parentNode
+        parentNode.insertBefore(elm, oldVnode.nextSibling)//el.nextSibling不存在就是null, insertBefore就是appendChild
+        parentNode.removeChild(oldVnode)
+    
+        return elm //返回最新节点
+    } else {
+        //diff算法如何实现？ 
+        console.log(oldVnode, vnode)
+    }
 }
 
-function createElm(vnode) {
+export function createElm(vnode) {
     let {tag,data,children,text ,vm, el} = vnode;
 
     //让虚拟节点和真实节点映射：后续更新某个虚拟节点，我们可以跟踪真实节点，并更新真实节点

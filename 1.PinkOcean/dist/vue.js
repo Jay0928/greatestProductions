@@ -4,93 +4,6 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Vue = factory());
 })(this, (function () { 'use strict';
 
-    function isFunction(val) {
-      return typeof val == 'function';
-    }
-    function isObject(val) {
-      return typeof val == 'object' && val !== null;
-    }
-    let isArray = Array.isArray;
-    let callBacks = [];
-    let waiting = false;
-
-    function flushCallBacks() {
-      callBacks.forEach(fn => fn());
-      callBacks = [];
-      waiting = false;
-    }
-
-    function nextTick(fn) {
-      //VUE3的nextTick就是Promise,VUE2里面做了一些兼容性处理
-      callBacks.push(fn);
-
-      if (!waiting) {
-        Promise.resolve().then(flushCallBacks);
-        waiting = true;
-      }
-    }
-    let strats = {}; //存放所有策略
-
-    let lifeCycle = ["beforeCreate", "created", "beforeMount", "mounted"];
-    lifeCycle.forEach(hook => {
-      strats[hook] = function (parentVal, childValue) {
-        if (childValue) {
-          if (parentVal) {
-            return parentVal.concat(childValue);
-          } else {
-            if (isArray(childValue)) {
-              return childValue;
-            } else {
-              return [childValue];
-            }
-          }
-        } else {
-          return parentVal;
-        }
-      };
-    });
-    function mergeOptions(parentVal, childValue) {
-      const options = {};
-
-      for (let key in parentVal) {
-        mergeFiled(key);
-      }
-
-      for (let key in childValue) {
-        if (!parentVal.hasOwnProperty(key)) {
-          mergeFiled(key);
-        }
-      }
-
-      function mergeFiled(key) {
-        //设计模式 策略模式
-        let strat = strats[key];
-
-        if (strat) {
-          options[key] = strat(parentVal[key], childValue[key]); // 合并两个值
-        } else {
-          options[key] = childValue[key] || parentVal[key];
-        }
-      }
-
-      return options;
-    } // console.log(mergeOptions({a: 1}, {a:2,b:3}))
-
-    function initGlobalAPI(Vue) {
-      Vue.options = {}; //全局属性
-
-      Vue.mixin = function (options) {
-        this.options = mergeOptions(this.options, options);
-        return this;
-      };
-
-      Vue.component = function (options) {};
-
-      Vue.filter = function (options) {};
-
-      Vue.directive = function (options) {};
-    }
-
     const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g; // {{   xxx  }}  
 
     function genProps(attrs) {
@@ -335,17 +248,110 @@
      * anonymous.call(vm._data)
      */
 
-    function putch(el, vnode) {
-      //unmount
-      const elm = createElm(vnode); //根据虚拟节点返回真实节点
+    function isFunction(val) {
+      return typeof val == 'function';
+    }
+    function isObject(val) {
+      return typeof val == 'object' && val !== null;
+    }
+    let isArray = Array.isArray;
+    let callBacks = [];
+    let waiting = false;
 
-      let parentNode = el.parentNode;
-      parentNode.insertBefore(elm, el.nextSibling); //el.nextSibling不存在就是null, insertBefore就是appendChild
-
-      parentNode.removeChild(el);
-      return elm; //返回最新节点
+    function flushCallBacks() {
+      callBacks.forEach(fn => fn());
+      callBacks = [];
+      waiting = false;
     }
 
+    function nextTick(fn) {
+      //VUE3的nextTick就是Promise,VUE2里面做了一些兼容性处理
+      callBacks.push(fn);
+
+      if (!waiting) {
+        Promise.resolve().then(flushCallBacks);
+        waiting = true;
+      }
+    }
+    let strats = {}; //存放所有策略
+
+    let lifeCycle = ["beforeCreate", "created", "beforeMount", "mounted"];
+    lifeCycle.forEach(hook => {
+      strats[hook] = function (parentVal, childValue) {
+        if (childValue) {
+          if (parentVal) {
+            return parentVal.concat(childValue);
+          } else {
+            if (isArray(childValue)) {
+              return childValue;
+            } else {
+              return [childValue];
+            }
+          }
+        } else {
+          return parentVal;
+        }
+      };
+    });
+    function mergeOptions(parentVal, childValue) {
+      const options = {};
+
+      for (let key in parentVal) {
+        mergeFiled(key);
+      }
+
+      for (let key in childValue) {
+        if (!parentVal.hasOwnProperty(key)) {
+          mergeFiled(key);
+        }
+      }
+
+      function mergeFiled(key) {
+        //设计模式 策略模式
+        let strat = strats[key];
+
+        if (strat) {
+          options[key] = strat(parentVal[key], childValue[key]); // 合并两个值
+        } else {
+          options[key] = childValue[key] || parentVal[key];
+        }
+      }
+
+      return options;
+    } // console.log(mergeOptions({a: 1}, {a:2,b:3}))
+
+    function initGlobalAPI(Vue) {
+      Vue.options = {}; //全局属性
+
+      Vue.mixin = function (options) {
+        this.options = mergeOptions(this.options, options);
+        return this;
+      };
+
+      Vue.component = function (options) {};
+
+      Vue.filter = function (options) {};
+
+      Vue.directive = function (options) {};
+    }
+
+    function putch(oldVnode, vnode) {
+      //unmount
+      const isRealElement = oldVnode.nodeType;
+
+      if (isRealElement) {
+        const elm = createElm(vnode); //根据虚拟节点返回真实节点
+
+        let parentNode = oldVnode.parentNode;
+        parentNode.insertBefore(elm, oldVnode.nextSibling); //el.nextSibling不存在就是null, insertBefore就是appendChild
+
+        parentNode.removeChild(oldVnode);
+        return elm; //返回最新节点
+      } else {
+        //diff算法如何实现？ 
+        console.log(oldVnode, vnode);
+      }
+    }
     function createElm(vnode) {
       let {
         tag,
@@ -502,7 +508,9 @@
     function leftCyleMixin(Vue) {
       Vue.prototype._update = function (vnode) {
         //先序深入遍历创建节点 ：遇到节点就创建节点，递归创建
-        const vm = this;
+        const vm = this; //第一次渲染是根据虚拟节点，生成真实节点，替换掉原来的节点
+        //如果是第二次，生成新的虚拟节点和老的虚拟节点进行对比
+
         vm.$el = putch(vm.$el, vnode);
       };
     }
@@ -807,7 +815,26 @@
 
     leftCyleMixin(Vue); //渲染真实节点
 
-    initGlobalAPI(Vue);
+    initGlobalAPI(Vue); //先生成一个虚拟节点
+
+    let vm = new Vue({
+      data() {
+        return {
+          name: 'zj'
+        };
+      }
+
+    });
+    let render = compileToFunction(`<div>{{name}}</div>`);
+    let oldVnode = render.call(vm);
+    let el1 = createElm(oldVnode);
+    document.body.appendChild(el1); //再生成一个新的虚拟节点，patch
+
+    vm.name = 'zf';
+    let newVnode = render.call(vm);
+    setTimeout(() => {
+      putch(oldVnode, newVnode); //比对虚拟节点的差异
+    }, 1000);
 
     return Vue;
 
