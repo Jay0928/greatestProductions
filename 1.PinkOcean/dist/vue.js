@@ -335,6 +335,33 @@
       Vue.directive = function (options) {};
     }
 
+    function createElement(vm, tag, data = {}, ...children) {
+      //返回虚拟节点
+      return vnode(vm, tag, data, children, undefined, undefined);
+    }
+    function createText(vm, text) {
+      //返回虚拟节点
+      return vnode(vm, undefined, undefined, undefined, undefined, text);
+    } // 看两个节点是不是相同节点，就看tag和key是否一样
+    //vue2性能问题：递归比对
+
+    function isSameVnode(newVnode, oldVnode) {
+      return newVnode.tag === oldVnode.tag && newVnode.key === oldVnode.key;
+    }
+
+    function vnode(vm, tag, data, children, key, text) {
+      return {
+        vm,
+        tag,
+        data,
+        children,
+        key,
+        text
+      };
+    } //vnode和ast的区别
+    //ast 描述语法的，并没有用户自己的逻辑，只有语法解析出来的逻辑；
+    //vnode 描述dom结构，可以自己去扩展
+
     function putch(oldVnode, vnode) {
       //unmount
       const isRealElement = oldVnode.nodeType;
@@ -349,7 +376,25 @@
         return elm; //返回最新节点
       } else {
         //diff算法如何实现？ 
-        console.log(oldVnode, vnode);
+        // console.log(oldVnode, vnode)
+        if (!isSameVnode(oldVnode, vnode)) {
+          //如果新旧节点不是同一个，删除老的换成新的
+          return oldVnode.el.parentNode.replaceChild(createElm(vnode), oldVnode.el);
+        } //是相同节点，复用，再更新不一样的地方
+
+
+        vnode.el = oldVnode.el; //复用节点
+        //（属性：文本特殊处理）
+
+        if (!oldVnode.tag) {
+          //文本比对
+          if (oldVnode.text !== vnode.text) {
+            return oldVnode.textContent = vnode.text;
+          }
+        } //元素
+
+
+        updataProperties(vnode, oldVnode.data);
       }
     }
     function createElm(vnode) {
@@ -365,7 +410,7 @@
       if (typeof tag === 'string') {
         vnode.el = document.createElement('tag'); //如果有data需要更新到属性上
 
-        updataProperties(vnode.el, data);
+        updataProperties(vnode, data);
         children.forEach(child => {
           vnode.el.appendChild(createElm(child));
         });
@@ -376,10 +421,37 @@
       return vnode.el;
     }
 
-    function updataProperties(el, props = {}) {
+    function updataProperties(vnode, oldProps = {}) {
       //后续写diff算法时候在进行完善
-      for (let key in props) {
-        el.setAttribute(key, props[key]);
+      //初次渲染：直接用oldProps给vnode的赋值即可
+      //更新逻辑：拿到老的props 和 vnode中的data做对比 
+      let el = vnode.el; //dom真实节点
+
+      let newProps = vnode.data || {}; //新旧比对，两个对象对比差异？
+
+      let newStyle = newProps.style || {};
+      let oldStyle = oldProps.style || {};
+
+      for (let key in oldStyle) {
+        if (!oldStyle[key]) {
+          el.style[key] = "";
+        }
+      }
+
+      for (let key in newProps) {
+        if (key == 'style') {
+          for (let key in newStyle) {
+            el.style[key] = newStyle[key];
+          }
+        } else {
+          el.setAttribute(key, newProps[key]);
+        }
+      }
+
+      for (let key in oldProps) {
+        if (!newProps[key]) {
+          el.removeAttribute(key);
+        }
       }
     }
 
@@ -747,28 +819,6 @@
       Vue.prototype.$nextTick = nextTick;
     }
 
-    function createElement(vm, tag, data = {}, ...children) {
-      //返回虚拟节点
-      return vnode(vm, tag, data, children, undefined, undefined);
-    }
-    function createText(vm, text) {
-      //返回虚拟节点
-      return vnode(vm, undefined, undefined, undefined, undefined, text);
-    }
-
-    function vnode(vm, tag, data, children, key, text) {
-      return {
-        vm,
-        tag,
-        data,
-        children,
-        key,
-        text
-      };
-    } //vnode和ast的区别
-    //ast 描述语法的，并没有用户自己的逻辑，只有语法解析出来的逻辑；
-    //vnode 描述dom结构，可以自己去扩展
-
     function renderMixin(Vue) {
       Vue.prototype._c = function () {
         //createElement 创建元素节点
@@ -817,7 +867,7 @@
 
     initGlobalAPI(Vue); //先生成一个虚拟节点
 
-    let vm = new Vue({
+    let vm1 = new Vue({
       data() {
         return {
           name: 'zj'
@@ -825,13 +875,21 @@
       }
 
     });
-    let render = compileToFunction(`<div>{{name}}</div>`);
-    let oldVnode = render.call(vm);
+    let render1 = compileToFunction(`<div style="color:red;">{{name}}</div>`);
+    let oldVnode = render1.call(vm1);
     let el1 = createElm(oldVnode);
     document.body.appendChild(el1); //再生成一个新的虚拟节点，patch
 
-    vm.name = 'zf';
-    let newVnode = render.call(vm);
+    let vm2 = new Vue({
+      data() {
+        return {
+          name: 'zz'
+        };
+      }
+
+    });
+    let render2 = compileToFunction(`<div style="color:blue;">{{name}}</div>`);
+    let newVnode = render2.call(vm2);
     setTimeout(() => {
       putch(oldVnode, newVnode); //比对虚拟节点的差异
     }, 1000);

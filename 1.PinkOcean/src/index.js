@@ -20,19 +20,24 @@ initGlobalAPI(Vue)
 
 
 //先生成一个虚拟节点
-let vm = new Vue({
+let vm1= new Vue({
     data() {
         return {name: 'zj'}
     }
 })
-let render = compileToFunction(`<div>{{name}}</div>`)
-let oldVnode = render.call(vm);
+let render1 = compileToFunction(`<div style="color:red;">{{name}}</div>`)
+let oldVnode = render1.call(vm1);
 let el1 = createElm(oldVnode)
 document.body.appendChild(el1)
 
 //再生成一个新的虚拟节点，patch
-vm.name = 'zf'
-let newVnode = render.call(vm)
+let vm2= new Vue({
+    data() {
+        return {name: 'zz'}
+    }
+})
+let render2 = compileToFunction(`<div style="color:blue;">{{name}}</div>`)
+let newVnode = render2.call(vm2);
 
 
 setTimeout(()=> {

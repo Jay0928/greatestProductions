@@ -5,7 +5,11 @@ export function createElement(vm, tag, data = {}, ...children) { //返回虚拟�
 export function createText(vm, text) { //返回虚拟节点
     return vnode(vm, undefined, undefined, undefined, undefined,text)
 }
-
+// 看两个节点是不是相同节点，就看tag和key是否一样
+//vue2性能问题：递归比对
+export function isSameVnode (newVnode, oldVnode) {
+    return (newVnode.tag === oldVnode.tag) && (newVnode.key === oldVnode.key)
+}
 function vnode(vm, tag, data, children, key, text) {
     return { vm, tag, data, children, key, text }
 }
