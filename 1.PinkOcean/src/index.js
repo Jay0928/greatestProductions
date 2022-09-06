@@ -25,7 +25,10 @@ let vm1= new Vue({
         return {name: 'zj'}
     }
 })
-let render1 = compileToFunction(`<div style="color:red;">{{name}}</div>`)
+let render1 = compileToFunction(`<div style="color:red;">
+    <li key='a'>1</li>
+    <li key='b'>2</li>
+</div>`)
 let oldVnode = render1.call(vm1);
 let el1 = createElm(oldVnode)
 document.body.appendChild(el1)
@@ -36,7 +39,11 @@ let vm2= new Vue({
         return {name: 'zz'}
     }
 })
-let render2 = compileToFunction(`<div style="color:blue;">{{name}}</div>`)
+let render2 = compileToFunction(`<div style="color:red;">
+    <li key='1'>4</li>
+    <li key='2'>5</li>
+    <li key='3'>6</li>
+</div>`)
 let newVnode = render2.call(vm2);
 
 
